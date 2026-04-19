@@ -1,0 +1,81 @@
+body {
+    background-color: #000;
+    color: white;
+    text-align: center;
+    font-family: Arial;
+}
+
+h1 {
+    color: #bb86fc;
+    font-size: 40px;
+    margin: 25px 0;
+}
+
+.scoreboard {
+    margin-bottom: 20px;
+    font-size: 20px;
+    color: #fff;
+}
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(3, 120px);
+    gap: 12px;
+    justify-content: center;
+}
+
+.cell {
+    width: 120px;
+    height: 120px;
+    background: #1f1f1f;
+    border-radius: 12px;
+    font-size: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.cell:hover {
+    background: #272727;
+    transform: scale(1.05);
+}
+
+.finished {
+    animation: glow 1s infinite alternate;
+}
+
+@keyframes glow {
+    from { box-shadow: 0 0 10px #bb86fc; }
+    to { box-shadow: 0 0 25px #bb86fc; }
+}
+
+button {
+    margin-top: 25px;
+    padding: 12px 20px;
+    background: #bb86fc;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 18px;
+    color: black;
+}
+
+button:hover {
+    background: #9a6ce3;
+}
+
+#aiStatus {
+    font-size: 18px;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.x-mark {
+    color: #4fc3f7;
+}
+
+.o-mark {
+    color: #f48fb1;
+}
