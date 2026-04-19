@@ -1,0 +1,1 @@
+web: gunicorn Tic_Tac_Toe.app:app
