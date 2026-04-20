@@ -24,14 +24,21 @@ def check_winner(board):
 
     return None
 
+
 @app.route("/move", methods=["POST"])
 def move():
     data = request.json
     board = data["board"]
     player = data["player"]
 
+    # Check if the game is already over before processing the move
     winner = check_winner(board)
-    return jsonify({"winner": winner})
+    if winner is not None:
+        # If the game is over, do not process further moves
+        return jsonify({"winner": winner, "error": "Game already finished."})
+
+    # ...existing code for move validation or AI move (if any) would go here...
+    return jsonify({"winner": None})
 
 if __name__ == "__main__":
     app.run(host = "0.0.0.0", port = 5000)
