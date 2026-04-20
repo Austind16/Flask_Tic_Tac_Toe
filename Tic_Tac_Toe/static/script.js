@@ -1,6 +1,9 @@
 let board = ["", "", "", "", "", "", "", "", ""];
 let currentPlayer = "X";
 let aiMode = false;
+let moveInProgress = false;
+let gameVersion = 0;
+let pendingAiTimeoutId = null;
 
 // Load Sounds
 let clickSound = new Audio("/static/sounds/click.wav");
@@ -20,30 +23,130 @@ function updateScore(result) {
     document.getElementById("scoreD").innerText = scoreD;
 }
 
-function makeMove(index) {
-    if (board[index] !== "" || checkDone()) return;
+function setNotice(message = "", isError = false) {
+    const notice = document.getElementById("notice");
+    if (!notice) return;
 
-    board[index] = currentPlayer;
+    notice.innerText = message;
+    notice.classList.remove("error", "info");
+
+    if (message) {
+        notice.classList.add(isError ? "error" : "info");
+    }
+}
+
+function clearPendingAiMove() {
+    if (pendingAiTimeoutId !== null) {
+        clearTimeout(pendingAiTimeoutId);
+        pendingAiTimeoutId = null;
+    }
+}
+
+function scheduleAiMove(delayMs = 500) {
+    if (!aiMode || currentPlayer !== "O" || checkDone() || moveInProgress) return;
+
+    clearPendingAiMove();
+    const scheduledGameVersion = gameVersion;
+
+    pendingAiTimeoutId = setTimeout(() => {
+        pendingAiTimeoutId = null;
+        if (!aiMode || scheduledGameVersion !== gameVersion || checkDone()) return;
+        aiMove();
+    }, delayMs);
+}
+
+function rollbackMove(index, playedBy, requestGameVersion) {
+    // Do not rollback if this response belongs to an older game.
+    if (requestGameVersion !== gameVersion) return;
+
+    if (board[index] !== playedBy) return;
+
+    board[index] = "";
     let cell = document.getElementsByClassName("cell")[index];
-    cell.innerText = currentPlayer;
-    cell.classList.add(currentPlayer === "X" ? "x-mark" : "o-mark");
+    if (cell) {
+        cell.innerText = "";
+        cell.classList.remove("x-mark", "o-mark");
+    }
+}
+
+function makeMove(index, isAiMove = false) {
+    if (moveInProgress || board[index] !== "" || checkDone()) return;
+
+    setNotice("");
+    let shouldScheduleAi = false;
+
+    // In AI mode, block human clicks when it is AI's turn.
+    if (aiMode && currentPlayer === "O" && !isAiMove) return;
+
+    const playedBy = currentPlayer;
+    board[index] = playedBy;
+    let cell = document.getElementsByClassName("cell")[index];
+    cell.innerText = playedBy;
+    cell.classList.add(playedBy === "X" ? "x-mark" : "o-mark");
 
     clickSound.play();
+
+    moveInProgress = true;
+    const requestGameVersion = gameVersion;
 
     fetch("/move", {
         method: "POST",
         headers: {"Content-Type": "application/json"},
-        body: JSON.stringify({ board: board, player: currentPlayer })
+        body: JSON.stringify({ board: board, player: playedBy })
     })
-    .then(res => res.json())
+    .then(async res => {
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok && !data.error) {
+            data.error = "Request failed.";
+        }
+        return data;
+    })
     .then(data => {
+        // Ignore stale responses from an older game.
+        if (requestGameVersion !== gameVersion) return;
+
+        if (data.error) {
+            // If backend reports game-finished winner, keep board and show result.
+            if (data.winner) {
+                showResult(data.winner);
+            } else {
+                rollbackMove(index, playedBy, requestGameVersion);
+                setNotice(data.error, true);
+
+                // If an AI move is rejected, restore control to X so the game does not get stuck.
+                if (aiMode && playedBy === "O") {
+                    currentPlayer = "X";
+                }
+            }
+
+            console.warn("Move rejected:", data.error);
+            return;
+        }
+
         if (data.winner) {
             showResult(data.winner);
         } else {
             currentPlayer = currentPlayer === "X" ? "O" : "X";
+            shouldScheduleAi = aiMode && currentPlayer === "O";
+        }
+    })
+    .catch(err => {
+        rollbackMove(index, playedBy, requestGameVersion);
+        setNotice("Network error. Please try again.", true);
 
-            if (aiMode && currentPlayer === "O") {
-                setTimeout(aiMove, 500);
+        // If an AI move fails, restore control to X so the game does not get stuck.
+        if (requestGameVersion === gameVersion && aiMode && playedBy === "O") {
+            currentPlayer = "X";
+        }
+
+        console.error("Move request failed:", err);
+    })
+    .finally(() => {
+        if (requestGameVersion === gameVersion) {
+            moveInProgress = false;
+
+            if (shouldScheduleAi) {
+                scheduleAiMove();
             }
         }
     });
@@ -65,11 +168,25 @@ function aiMove() {
         }
     });
 
-    makeMove(bestMove);
+    if (bestMove === -1) {
+        if (checkDone()) return;
+
+        const winner = checkWinnerJS(board);
+        if (winner) {
+            showResult(winner);
+        } else if (!board.includes("")) {
+            showResult("Draw");
+        }
+        return;
+    }
+
+    makeMove(bestMove, true);
 }
 
 function showResult(winner) {
     let msg = winner === "Draw" ? "It's a Draw!" : `${winner} Wins!`;
+
+    setNotice("");
 
     if (winner === "Draw") drawSound.play();
     else winSound.play();
@@ -87,9 +204,15 @@ function checkDone() {
 }
 
 function resetGame() {
+    gameVersion++;
+
+    clearPendingAiMove();
+
+    moveInProgress = false;
     board = ["", "", "", "", "", "", "", "", ""];
     currentPlayer = "X";
     document.getElementById("status").innerText = "";
+    setNotice("");
 
     let cells = document.getElementsByClassName("cell");
     for (let c of cells) {
@@ -145,4 +268,13 @@ function toggleAI() {
     aiMode = !aiMode;
     document.getElementById("aiStatus").innerText = "AI Mode: " + (aiMode ? "ON" : "OFF");
     document.getElementById("aiStatus").style.color = aiMode ? "#bb86fc" : "white";
+
+    if (!aiMode) {
+        clearPendingAiMove();
+        return;
+    }
+
+    if (currentPlayer === "O") {
+        scheduleAiMove(150);
+    }
 }
