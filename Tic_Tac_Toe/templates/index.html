@@ -38,14 +38,26 @@
 
     <div class="ai-controls">
         <button id="aiToggleBtn" onclick="toggleAI()">Enable AI</button>
-        <div class="ai-select-wrap">
-            <span class="ai-select-label">AI Opponent</span>
-            <div class="select-shell">
-                <select id="aiLevel" onchange="setAiLevel()">
-                    <option value="easy">Easy</option>
-                    <option value="medium">Medium</option>
-                    <option value="hard" selected>Hard</option>
-                </select>
+        <div class="ai-settings">
+            <div id="aiLevelWrap" class="ai-select-wrap" style="display: none;">
+                <span class="ai-select-label">AI Opponent</span>
+                <div class="select-shell">
+                    <select id="aiLevel" onchange="setAiLevel()">
+                        <option value="easy">Easy</option>
+                        <option value="medium">Medium</option>
+                        <option value="hard" selected>Hard</option>
+                    </select>
+                </div>
+            </div>
+
+            <div id="playerMarkWrap" class="ai-select-wrap" style="display: none;">
+                <span class="ai-select-label">Play As</span>
+                <div class="select-shell">
+                    <select id="playerMark" onchange="setPlayerMark()">
+                        <option value="X" selected>X (First)</option>
+                        <option value="O">O (Second)</option>
+                    </select>
+                </div>
             </div>
         </div>
     </div>

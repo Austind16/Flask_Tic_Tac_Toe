@@ -2,6 +2,8 @@ let board = ["", "", "", "", "", "", "", "", ""];
 let currentPlayer = "X";
 let aiMode = false;
 let aiLevel = "hard";
+let humanMark = "X";
+let aiMark = "O";
 let moveInProgress = false;
 let gameVersion = 0;
 let pendingAiTimeoutId = null;
@@ -23,6 +25,8 @@ function getAiLevelLabel(level) {
 function updateAiStatus() {
     const aiStatus = document.getElementById("aiStatus");
     const aiToggleBtn = document.getElementById("aiToggleBtn");
+    const aiLevelWrap = document.getElementById("aiLevelWrap");
+    const playerMarkWrap = document.getElementById("playerMarkWrap");
     if (!aiStatus) return;
 
     if (!aiMode) {
@@ -30,13 +34,17 @@ function updateAiStatus() {
         aiStatus.style.color = "white";
         aiStatus.classList.remove("active");
         if (aiToggleBtn) aiToggleBtn.innerText = "Enable AI";
+        if (aiLevelWrap) aiLevelWrap.style.display = "none";
+        if (playerMarkWrap) playerMarkWrap.style.display = "none";
         return;
     }
 
-    aiStatus.innerText = `AI Mode: ON (${getAiLevelLabel(aiLevel)})`;
+    aiStatus.innerText = `AI Mode: ON (${getAiLevelLabel(aiLevel)}) | You: ${humanMark} | AI: ${aiMark}`;
     aiStatus.style.color = "#bb86fc";
     aiStatus.classList.add("active");
     if (aiToggleBtn) aiToggleBtn.innerText = "Disable AI";
+    if (aiLevelWrap) aiLevelWrap.style.display = "flex";
+    if (playerMarkWrap) playerMarkWrap.style.display = "flex";
 }
 
 function setAiLevel() {
@@ -46,8 +54,25 @@ function setAiLevel() {
     aiLevel = selector.value;
     updateAiStatus();
 
-    if (aiMode && currentPlayer === "O" && !moveInProgress && !checkDone()) {
+    if (aiMode && currentPlayer === aiMark && !moveInProgress && !checkDone()) {
         scheduleAiMove(150);
+    }
+}
+
+function setPlayerMark() {
+    const selector = document.getElementById("playerMark");
+    if (!selector) return;
+
+    const chosenMark = selector.value === "O" ? "O" : "X";
+    const markChanged = chosenMark !== humanMark;
+
+    humanMark = chosenMark;
+    aiMark = humanMark === "X" ? "O" : "X";
+    updateAiStatus();
+
+    // A mark change in AI mode should start a clean game to keep turn order valid.
+    if (markChanged && aiMode) {
+        resetGame();
     }
 }
 
@@ -81,7 +106,7 @@ function clearPendingAiMove() {
 }
 
 function scheduleAiMove(delayMs = 500) {
-    if (!aiMode || currentPlayer !== "O" || checkDone() || moveInProgress) return;
+    if (!aiMode || currentPlayer !== aiMark || checkDone() || moveInProgress) return;
 
     clearPendingAiMove();
     const scheduledGameVersion = gameVersion;
@@ -114,7 +139,7 @@ function makeMove(index, isAiMove = false) {
     let shouldScheduleAi = false;
 
     // In AI mode, block human clicks when it is AI's turn.
-    if (aiMode && currentPlayer === "O" && !isAiMove) return;
+    if (aiMode && currentPlayer === aiMark && !isAiMove) return;
 
     const playedBy = currentPlayer;
     board[index] = playedBy;
@@ -152,8 +177,8 @@ function makeMove(index, isAiMove = false) {
                 setNotice(data.error, true);
 
                 // If an AI move is rejected, restore control to X so the game does not get stuck.
-                if (aiMode && playedBy === "O") {
-                    currentPlayer = "X";
+                if (aiMode && playedBy === aiMark) {
+                    currentPlayer = humanMark;
                 }
             }
 
@@ -165,7 +190,7 @@ function makeMove(index, isAiMove = false) {
             showResult(data.winner);
         } else {
             currentPlayer = currentPlayer === "X" ? "O" : "X";
-            shouldScheduleAi = aiMode && currentPlayer === "O";
+            shouldScheduleAi = aiMode && currentPlayer === aiMark;
         }
     })
     .catch(err => {
@@ -173,8 +198,8 @@ function makeMove(index, isAiMove = false) {
         setNotice("Network error. Please try again.", true);
 
         // If an AI move fails, restore control to X so the game does not get stuck.
-        if (requestGameVersion === gameVersion && aiMode && playedBy === "O") {
-            currentPlayer = "X";
+        if (requestGameVersion === gameVersion && aiMode && playedBy === aiMark) {
+            currentPlayer = humanMark;
         }
 
         console.error("Move request failed:", err);
@@ -236,10 +261,10 @@ function getMediumMove() {
         return getRandomMove(availableMoves);
     }
 
-    let move = findWinningMove(board, "O");
+    let move = findWinningMove(board, aiMark);
     if (move !== -1 && chance(0.85)) return move;
 
-    move = findWinningMove(board, "X");
+    move = findWinningMove(board, humanMark);
     if (move !== -1 && chance(0.7)) return move;
 
     if (chance(0.45)) {
@@ -261,7 +286,7 @@ function getHardMove() {
 
     board.forEach((val, i) => {
         if (val === "") {
-            board[i] = "O";
+            board[i] = aiMark;
             let score = minimax(board, false);
             board[i] = "";
             if (score > bestScore) {
@@ -336,19 +361,23 @@ function resetGame() {
         c.innerText = "";
         c.classList.remove("finished", "x-mark", "o-mark");
     }
+
+    if (aiMode && currentPlayer === aiMark) {
+        scheduleAiMove(150);
+    }
 }
 
 function minimax(board, isMaximizing) {
     let winner = checkWinnerJS(board);
-    if (winner === "O") return 10;
-    if (winner === "X") return -10;
+    if (winner === aiMark) return 10;
+    if (winner === humanMark) return -10;
     if (!board.includes("")) return 0;
 
     if (isMaximizing) {
         let best = -Infinity;
         board.forEach((val, i) => {
             if (val === "") {
-                board[i] = "O";
+                board[i] = aiMark;
                 best = Math.max(best, minimax(board, false));
                 board[i] = "";
             }
@@ -358,7 +387,7 @@ function minimax(board, isMaximizing) {
         let best = Infinity;
         board.forEach((val, i) => {
             if (val === "") {
-                board[i] = "X";
+                board[i] = humanMark;
                 best = Math.min(best, minimax(board, true));
                 board[i] = "";
             }
@@ -390,7 +419,7 @@ function toggleAI() {
         return;
     }
 
-    if (currentPlayer === "O") {
+    if (currentPlayer === aiMark) {
         scheduleAiMove(150);
     }
 }

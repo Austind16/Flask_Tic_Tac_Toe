@@ -96,6 +96,13 @@ button:hover {
     margin-top: 0;
 }
 
+.ai-settings {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
 .ai-select-wrap {
     display: flex;
     flex-direction: column;
@@ -191,6 +198,10 @@ button:hover {
     .ai-controls {
         width: min(92%, 360px);
         justify-content: center;
+    }
+
+    .ai-settings {
+        width: 100%;
     }
 
     .ai-select-wrap {
