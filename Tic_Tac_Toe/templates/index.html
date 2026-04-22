@@ -26,14 +26,30 @@
     <div class="cell" onclick="makeMove(6)"></div>
     <div class="cell" onclick="makeMove(7)"></div>
     <div class="cell" onclick="makeMove(8)"></div>
-    <p id="aiStatus">AI Mode: OFF</p>
 </div>
+
+<p id="aiStatus">AI Mode: OFF</p>
 
 <h2 id="status"></h2>
 <p id="notice" aria-live="polite"></p>
 
-<button onclick="resetGame()">Reset Game</button>
-<button onclick="toggleAI()">Toggle AI Mode</button>
+<div class="actions">
+    <button onclick="resetGame()">Reset Game</button>
+
+    <div class="ai-controls">
+        <button id="aiToggleBtn" onclick="toggleAI()">Enable AI</button>
+        <div class="ai-select-wrap">
+            <span class="ai-select-label">AI Opponent</span>
+            <div class="select-shell">
+                <select id="aiLevel" onchange="setAiLevel()">
+                    <option value="easy">Easy</option>
+                    <option value="medium">Medium</option>
+                    <option value="hard" selected>Hard</option>
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
 
 <script src="/static/script.js"></script>
 

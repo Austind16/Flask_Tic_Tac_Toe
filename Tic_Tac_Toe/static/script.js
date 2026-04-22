@@ -1,6 +1,7 @@
 let board = ["", "", "", "", "", "", "", "", ""];
 let currentPlayer = "X";
 let aiMode = false;
+let aiLevel = "hard";
 let moveInProgress = false;
 let gameVersion = 0;
 let pendingAiTimeoutId = null;
@@ -12,6 +13,43 @@ let drawSound = new Audio("/static/sounds/draw.wav");
 
 // Scoreboard
 let scoreX = 0, scoreO = 0, scoreD = 0;
+
+function getAiLevelLabel(level) {
+    if (level === "easy") return "Easy";
+    if (level === "medium") return "Medium";
+    return "Hard";
+}
+
+function updateAiStatus() {
+    const aiStatus = document.getElementById("aiStatus");
+    const aiToggleBtn = document.getElementById("aiToggleBtn");
+    if (!aiStatus) return;
+
+    if (!aiMode) {
+        aiStatus.innerText = "AI Mode: OFF";
+        aiStatus.style.color = "white";
+        aiStatus.classList.remove("active");
+        if (aiToggleBtn) aiToggleBtn.innerText = "Enable AI";
+        return;
+    }
+
+    aiStatus.innerText = `AI Mode: ON (${getAiLevelLabel(aiLevel)})`;
+    aiStatus.style.color = "#bb86fc";
+    aiStatus.classList.add("active");
+    if (aiToggleBtn) aiToggleBtn.innerText = "Disable AI";
+}
+
+function setAiLevel() {
+    const selector = document.getElementById("aiLevel");
+    if (!selector) return;
+
+    aiLevel = selector.value;
+    updateAiStatus();
+
+    if (aiMode && currentPlayer === "O" && !moveInProgress && !checkDone()) {
+        scheduleAiMove(150);
+    }
+}
 
 function updateScore(result) {
     if (result === "X") scoreX++;
@@ -152,7 +190,72 @@ function makeMove(index, isAiMove = false) {
     });
 }
 
-function aiMove() {
+function getAvailableMoves(boardState) {
+    const moves = [];
+    boardState.forEach((value, index) => {
+        if (value === "") moves.push(index);
+    });
+    return moves;
+}
+
+function getRandomMove(moves) {
+    if (!moves.length) return -1;
+    return moves[Math.floor(Math.random() * moves.length)];
+}
+
+function chance(probability) {
+    return Math.random() < probability;
+}
+
+function findWinningMove(boardState, mark) {
+    const availableMoves = getAvailableMoves(boardState);
+
+    for (let move of availableMoves) {
+        boardState[move] = mark;
+        const winner = checkWinnerJS(boardState);
+        boardState[move] = "";
+
+        if (winner === mark) {
+            return move;
+        }
+    }
+
+    return -1;
+}
+
+function getEasyMove() {
+    return getRandomMove(getAvailableMoves(board));
+}
+
+function getMediumMove() {
+    const availableMoves = getAvailableMoves(board);
+    if (!availableMoves.length) return -1;
+
+    // Medium AI should be beatable: it sometimes blunders or misses blocks.
+    if (chance(0.25)) {
+        return getRandomMove(availableMoves);
+    }
+
+    let move = findWinningMove(board, "O");
+    if (move !== -1 && chance(0.85)) return move;
+
+    move = findWinningMove(board, "X");
+    if (move !== -1 && chance(0.7)) return move;
+
+    if (chance(0.45)) {
+        const hardMove = getHardMove();
+        if (hardMove !== -1) return hardMove;
+    }
+
+    if (board[4] === "" && chance(0.65)) return 4;
+
+    const availableCorners = [0, 2, 6, 8].filter(index => board[index] === "");
+    if (availableCorners.length && chance(0.65)) return getRandomMove(availableCorners);
+
+    return getRandomMove(availableMoves);
+}
+
+function getHardMove() {
     let bestScore = -Infinity;
     let bestMove = -1;
 
@@ -167,6 +270,20 @@ function aiMove() {
             }
         }
     });
+
+    return bestMove;
+}
+
+function aiMove() {
+    let bestMove = -1;
+
+    if (aiLevel === "easy") {
+        bestMove = getEasyMove();
+    } else if (aiLevel === "medium") {
+        bestMove = getMediumMove();
+    } else {
+        bestMove = getHardMove();
+    }
 
     if (bestMove === -1) {
         if (checkDone()) return;
@@ -266,8 +383,7 @@ function checkWinnerJS(board) {
 
 function toggleAI() {
     aiMode = !aiMode;
-    document.getElementById("aiStatus").innerText = "AI Mode: " + (aiMode ? "ON" : "OFF");
-    document.getElementById("aiStatus").style.color = aiMode ? "#bb86fc" : "white";
+    updateAiStatus();
 
     if (!aiMode) {
         clearPendingAiMove();
@@ -278,3 +394,5 @@ function toggleAI() {
         scheduleAiMove(150);
     }
 }
+
+updateAiStatus();

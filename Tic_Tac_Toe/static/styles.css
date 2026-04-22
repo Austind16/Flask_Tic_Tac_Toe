@@ -22,6 +22,7 @@ h1 {
     grid-template-columns: repeat(3, 120px);
     gap: 12px;
     justify-content: center;
+    margin-bottom: 10px;
 }
 
 .cell {
@@ -52,7 +53,7 @@ h1 {
 }
 
 button {
-    margin-top: 25px;
+    margin-top: 0;
     padding: 12px 20px;
     background: #bb86fc;
     border: none;
@@ -60,16 +61,97 @@ button {
     cursor: pointer;
     font-size: 18px;
     color: black;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
 }
 
 button:hover {
     background: #9a6ce3;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 18px rgba(154, 108, 227, 0.35);
+}
+
+.actions {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+}
+
+.ai-controls {
+    margin-top: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 12px 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(187, 134, 252, 0.45);
+    background: linear-gradient(145deg, rgba(187, 134, 252, 0.16), rgba(79, 195, 247, 0.12));
+    box-shadow: 0 10px 22px rgba(0, 0, 0, 0.35);
+}
+
+.ai-controls button {
+    margin-top: 0;
+}
+
+.ai-select-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+}
+
+.ai-select-label {
+    font-size: 12px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    color: #ded2ef;
+}
+
+.select-shell {
+    position: relative;
+}
+
+.select-shell::after {
+    content: "v";
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-52%);
+    color: #d8c6fb;
+    pointer-events: none;
+    font-size: 12px;
+}
+
+.ai-controls select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding: 10px 34px 10px 12px;
+    border-radius: 10px;
+    border: 1px solid rgba(187, 134, 252, 0.55);
+    background: rgba(16, 16, 16, 0.85);
+    color: #fff;
+    font-size: 16px;
+    min-width: 140px;
+    outline: none;
+}
+
+.ai-controls select:focus {
+    border-color: #c8a6ff;
+    box-shadow: 0 0 0 3px rgba(187, 134, 252, 0.25);
 }
 
 #aiStatus {
     font-size: 18px;
     margin-top: 10px;
+    margin-bottom: 4px;
     transition: 0.3s;
+}
+
+#aiStatus.active {
+    text-shadow: 0 0 10px rgba(187, 134, 252, 0.45);
 }
 
 #notice {
@@ -92,4 +174,36 @@ button:hover {
 
 .o-mark {
     color: #f48fb1;
+}
+
+@media (max-width: 480px) {
+    .board {
+        grid-template-columns: repeat(3, 90px);
+        gap: 10px;
+    }
+
+    .cell {
+        width: 90px;
+        height: 90px;
+        font-size: 48px;
+    }
+
+    .ai-controls {
+        width: min(92%, 360px);
+        justify-content: center;
+    }
+
+    .ai-select-wrap {
+        width: 100%;
+        align-items: center;
+    }
+
+    .select-shell {
+        width: 100%;
+    }
+
+    .ai-controls select {
+        width: 100%;
+        min-width: 0;
+    }
 }
