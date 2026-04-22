@@ -1,32 +1,33 @@
 from flask import Flask, render_template, request, jsonify
 
-app = Flask(__name__)
+app = Flask(__name__) # This initializes the Flask application. 
 
+# Define winning patterns for Tic Tac Toe
 WIN_PATTERNS = [
     [0, 1, 2], [3, 4, 5], [6, 7, 8],  # rows
     [0, 3, 6], [1, 4, 7], [2, 5, 8],  # columns
     [0, 4, 8], [2, 4, 6]              # diagonals
 ]
-VALID_MARKS = {"", "X", "O"}
+VALID_MARKS = {"", "X", "O"} # Valid marks for the board cells: empty, X, or O.
 
-@app.route("/")
+@app.route("/") # This defines the route for the home page of the application.
 def home():
-    return render_template("index.html")
+    return render_template("index.html") 
 
 # Check winner logic
-def check_winner(board):
+def check_winner(board): # This function checks the board for a winner or a draw.
     for pattern in WIN_PATTERNS:
         a, b, c = pattern
-        if board[a] == board[b] == board[c] and board[a] != "":
+    if board[a] == board[b] == board[c] and board[a] != "": 
             return board[a]
 
-    if "" not in board:
+    if "" not in board: 
         return "Draw"
 
-    return None
+    return None 
 
 
-def get_winners(board):
+def get_winners(board): # This function checks for all winners on the board.
     winners = set()
     for a, b, c in WIN_PATTERNS:
         if board[a] == board[b] == board[c] and board[a] != "":
@@ -34,7 +35,7 @@ def get_winners(board):
     return winners
 
 
-def is_valid_board(board):
+def is_valid_board(board): # This function checks if the board is valid: it must be a list of 9 cells, and each cell must be either empty, X, or O.
     return (
         isinstance(board, list)
         and len(board) == 9
@@ -42,7 +43,7 @@ def is_valid_board(board):
     )
 
 
-def is_valid_turn(board, player):
+def is_valid_turn(board, player): # This function checks if the turn is valid based on the counts of X and O on the board. 
     x_count = board.count("X")
     o_count = board.count("O")
 
@@ -56,7 +57,7 @@ def is_valid_turn(board, player):
     return x_count == o_count
 
 
-def _build_reachable_boards(board, player, reachable):
+def _build_reachable_boards(board, player, reachable): # This function recursively builds all reachable board states starting from an empty board and alternating turns between X and O. It adds valid
     state = tuple(board)
     if state in reachable:
         return
@@ -87,7 +88,7 @@ def is_reachable_board(board):
     return tuple(board) in REACHABLE_BOARDS
 
 
-@app.route("/move", methods=["POST"])
+@app.route("/move", methods=["POST"]) # This defines the route for handling moves in the game. It expects a POST request with a JSON payload containing the current board state and the player making the move.
 def move():
     data = request.get_json(silent=True)
     if not isinstance(data, dict):
@@ -119,8 +120,6 @@ def move():
 
     if winner is not None:
         return jsonify({"winner": winner})
-
-    # ...existing code for move validation or AI move (if any) would go here...
     return jsonify({"winner": None})
 
 if __name__ == "__main__":
