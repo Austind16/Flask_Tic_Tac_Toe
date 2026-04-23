@@ -86,7 +86,8 @@ A feature-rich Tic Tac Toe game with multiple play modes, AI opponents, and a dy
 
 ## 🌐 Live Demo
 
-👉 *(Add your deployed link here)*
+🔗 Link: https://lnkd.in/dc2ieBEE
+⚠️ Note: The app may take a few seconds to load initially as it’s hosted on a free server.
 
 ---
 
