@@ -18,8 +18,8 @@ def home():
 def check_winner(board): # This function checks the board for a winner or a draw.
     for pattern in WIN_PATTERNS:
         a, b, c = pattern
-    if board[a] == board[b] == board[c] and board[a] != "": 
-            return board[a]
+        if board[a] == board[b] == board[c] and board[a] != "": 
+                return board[a]
 
     if "" not in board: 
         return "Draw"
